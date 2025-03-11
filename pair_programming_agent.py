@@ -16,6 +16,15 @@ args = parser.parse_args()
 # Initialize FastMCP server
 mcp = FastMCP("PairProgrammingAgent")
 
+# Global variable to store the current codebase root
+current_codebase_root = args.codebase_root
+
+# Function to get the codebase root from context or use the default
+def get_codebase_root(context: Dict[str, Any] = None) -> str:
+    if context and 'codebase_root' in context:
+        return context['codebase_root']
+    return current_codebase_root
+
 class PairProgrammingAgent:
     def __init__(self, codebase_root: str):
         self.codebase_root = codebase_root
@@ -24,13 +33,15 @@ class PairProgrammingAgent:
 agent = PairProgrammingAgent(args.codebase_root)
 
 @mcp.tool()
-def search_codebase(query: str, target_directories: List[str] = []) -> Dict[str, Any]:
+def search_codebase(query: str, target_directories: List[str] = [], context: Dict[str, Any] = None) -> Dict[str, Any]:
     """Search the codebase for relevant code snippets.
     
     Args:
         query: The search query to find relevant code
         target_directories: Glob patterns for directories to search over (optional)
+        context: Additional context from the client (optional)
     """
+    codebase_root = get_codebase_root(context)
     return {
         "name": "codebase_search",
         "parameters": {
@@ -41,7 +52,7 @@ def search_codebase(query: str, target_directories: List[str] = []) -> Dict[str,
     }
 
 @mcp.tool()
-def read_file(target_file: str, start_line: int, end_line: int, should_read_entire_file: bool = False) -> Dict[str, Any]:
+def read_file(target_file: str, start_line: int, end_line: int, should_read_entire_file: bool = False, context: Dict[str, Any] = None) -> Dict[str, Any]:
     """Read the contents of a file.
     
     Args:
@@ -49,7 +60,9 @@ def read_file(target_file: str, start_line: int, end_line: int, should_read_enti
         start_line: The one-indexed line number to start reading from (inclusive)
         end_line: The one-indexed line number to end reading at (inclusive)
         should_read_entire_file: Whether to read the entire file (defaults to False)
+        context: Additional context from the client (optional)
     """
+    codebase_root = get_codebase_root(context)
     return {
         "name": "read_file",
         "parameters": {
@@ -62,14 +75,16 @@ def read_file(target_file: str, start_line: int, end_line: int, should_read_enti
     }
 
 @mcp.tool()
-def run_command(command: str, is_background: bool = False, require_user_approval: bool = True) -> Dict[str, Any]:
+def run_command(command: str, is_background: bool = False, require_user_approval: bool = True, context: Dict[str, Any] = None) -> Dict[str, Any]:
     """Run a terminal command.
     
     Args:
         command: The terminal command to execute
         is_background: Whether the command should be run in the background
         require_user_approval: Whether the user must approve the command before it is executed
+        context: Additional context from the client (optional)
     """
+    codebase_root = get_codebase_root(context)
     return {
         "name": "run_terminal_cmd",
         "parameters": {
@@ -81,12 +96,14 @@ def run_command(command: str, is_background: bool = False, require_user_approval
     }
 
 @mcp.tool()
-def list_directory(relative_path: str) -> Dict[str, Any]:
+def list_directory(relative_path: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
     """List the contents of a directory.
     
     Args:
         relative_path: Path to list contents of, relative to the workspace root
+        context: Additional context from the client (optional)
     """
+    codebase_root = get_codebase_root(context)
     return {
         "name": "list_dir",
         "parameters": {
@@ -96,7 +113,7 @@ def list_directory(relative_path: str) -> Dict[str, Any]:
     }
 
 @mcp.tool()
-def grep_search(query: str, include_pattern: str = "*.py", case_sensitive: bool = False, exclude_pattern: str = "") -> Dict[str, Any]:
+def grep_search(query: str, include_pattern: str = "*.py", case_sensitive: bool = False, exclude_pattern: str = "", context: Dict[str, Any] = None) -> Dict[str, Any]:
     """Perform a text-based regex search for exact pattern matches.
     
     Args:
@@ -104,7 +121,9 @@ def grep_search(query: str, include_pattern: str = "*.py", case_sensitive: bool 
         include_pattern: Glob pattern for files to include (e.g. '*.py' for Python files)
         case_sensitive: Whether the search should be case sensitive
         exclude_pattern: Glob pattern for files to exclude
+        context: Additional context from the client (optional)
     """
+    codebase_root = get_codebase_root(context)
     return {
         "name": "grep_search",
         "parameters": {
@@ -117,14 +136,16 @@ def grep_search(query: str, include_pattern: str = "*.py", case_sensitive: bool 
     }
 
 @mcp.tool()
-def edit_file(target_file: str, instructions: str, code_edit: str) -> Dict[str, Any]:
+def edit_file(target_file: str, instructions: str, code_edit: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
     """Edit an existing file.
     
     Args:
         target_file: The target file to modify
         instructions: A single sentence instruction describing what you are going to do
         code_edit: The code edit to apply
+        context: Additional context from the client (optional)
     """
+    codebase_root = get_codebase_root(context)
     return {
         "name": "edit_file",
         "parameters": {
@@ -135,12 +156,14 @@ def edit_file(target_file: str, instructions: str, code_edit: str) -> Dict[str, 
     }
 
 @mcp.tool()
-def search_file(query: str) -> Dict[str, Any]:
+def search_file(query: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
     """Search for a file by its name using fuzzy matching.
     
     Args:
         query: Fuzzy filename to search for
+        context: Additional context from the client (optional)
     """
+    codebase_root = get_codebase_root(context)
     return {
         "name": "file_search",
         "parameters": {
@@ -150,12 +173,14 @@ def search_file(query: str) -> Dict[str, Any]:
     }
 
 @mcp.tool()
-def delete_file(target_file: str) -> Dict[str, Any]:
+def delete_file(target_file: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
     """Delete a file at the specified path.
     
     Args:
         target_file: The path of the file to delete
+        context: Additional context from the client (optional)
     """
+    codebase_root = get_codebase_root(context)
     return {
         "name": "delete_file",
         "parameters": {
@@ -165,12 +190,14 @@ def delete_file(target_file: str) -> Dict[str, Any]:
     }
 
 @mcp.tool()
-def reapply_edit(target_file: str) -> Dict[str, Any]:
+def reapply_edit(target_file: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
     """Reapply the last edit to the specified file.
     
     Args:
         target_file: The relative path to the file to reapply the last edit to
+        context: Additional context from the client (optional)
     """
+    codebase_root = get_codebase_root(context)
     return {
         "name": "reapply",
         "parameters": {
@@ -179,11 +206,12 @@ def reapply_edit(target_file: str) -> Dict[str, Any]:
     }
 
 @mcp.tool()
-def web_search(search_term: str) -> Dict[str, Any]:
+def web_search(search_term: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
     """Search the web for real-time information.
     
     Args:
         search_term: The search term to look up on the web
+        context: Additional context from the client (optional)
     """
     return {
         "name": "web_search",
@@ -194,9 +222,13 @@ def web_search(search_term: str) -> Dict[str, Any]:
     }
 
 @mcp.tool()
-def get_diff_history() -> Dict[str, Any]:
+def get_diff_history(context: Dict[str, Any] = None) -> Dict[str, Any]:
     """Retrieve the history of recent changes made to files in the workspace.
+    
+    Args:
+        context: Additional context from the client (optional)
     """
+    codebase_root = get_codebase_root(context)
     return {
         "name": "diff_history",
         "parameters": {
@@ -204,9 +236,29 @@ def get_diff_history() -> Dict[str, Any]:
         }
     }
 
+@mcp.tool()
+def set_codebase_root(new_codebase_root: str) -> Dict[str, Any]:
+    """Set the codebase root directory.
+    
+    Args:
+        new_codebase_root: The absolute path to the codebase root directory
+    """
+    global current_codebase_root
+    if os.path.isdir(new_codebase_root):
+        current_codebase_root = new_codebase_root
+        return {
+            "success": True,
+            "message": f"Codebase root set to: {new_codebase_root}"
+        }
+    else:
+        return {
+            "success": False,
+            "message": f"Directory does not exist: {new_codebase_root}"
+        }
+
 if __name__ == "__main__":
     print(f"Starting Pair Programming Agent MCP Server")
-    print(f"Codebase root: {args.codebase_root}")
+    print(f"Default codebase root: {current_codebase_root}")
     print(f"Transport: {args.transport}")
     
     if args.transport == 'stdio':

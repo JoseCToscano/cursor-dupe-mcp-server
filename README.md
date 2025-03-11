@@ -31,19 +31,37 @@ python pair_programming_agent.py
 
 The server supports the following command-line arguments:
 
-- `--codebase-root`: Root directory of the codebase (default: current directory)
+- `--codebase-root`: Default root directory of the codebase (default: current directory)
 - `--transport`: Transport method for MCP, either 'stdio' or 'sse' (default: stdio)
 - `--port`: Port for SSE transport (default: 8000)
 
 Examples:
 
 ```bash
-# Run with a specific codebase root
+# Run with a specific default codebase root
 python pair_programming_agent.py --codebase-root /path/to/your/codebase
 
 # Run with SSE transport on port 9000
 python pair_programming_agent.py --transport sse --port 9000
 ```
+
+### Setting Codebase Root from Client
+
+The server supports setting the codebase root in two ways:
+
+1. **Using the `set_codebase_root` tool**:
+   The server exposes a tool that allows clients to change the codebase root at runtime:
+   ```python
+   set_codebase_root("/path/to/new/codebase")
+   ```
+
+2. **Using context in tool calls**:
+   Clients can provide a `codebase_root` parameter in the context of each tool call:
+   ```python
+   search_codebase("function_name", context={"codebase_root": "/path/to/codebase"})
+   ```
+
+This allows different clients to work with different codebases without restarting the server.
 
 ## Available Tools
 
@@ -60,6 +78,7 @@ The server exposes the following tools:
 - `reapply_edit`: Reapply the last edit to the specified file
 - `web_search`: Search the web for real-time information
 - `get_diff_history`: Retrieve the history of recent changes made to files in the workspace
+- `set_codebase_root`: Set the codebase root directory
 
 ## Integration with Claude for Desktop
 
